@@ -10,7 +10,7 @@
       }
     ],
     "require": {
-        "google/cloud":"dev-master"
+        "google/cloud":"v0.20.0"
     },
     "autoload": {
         "psr-4": {

@@ -1,0 +1,20 @@
+{
+    "name": "ampize/alambic-connector-gds",
+    "description": "Alambic connector for Google Cloud Data Store",
+    "keywords": ["alambic","connector", "google cloud datastore"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+      {
+        "name": "Ampize"
+      }
+    ],
+    "require": {
+        "google/cloud":"master"
+    },
+    "autoload": {
+        "psr-4": {
+            "AlambicGDSConnector\\": "src/AlambicGDSConnector/"
+        }
+    }
+}

@@ -7,7 +7,7 @@ use \Google\Cloud\ServiceBuilder;
 class Connection
 {
 
-    private static $instances;
+    private static $instances = [];
     private $connectionParams;
     private $connection;
 

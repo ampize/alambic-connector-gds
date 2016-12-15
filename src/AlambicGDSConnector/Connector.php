@@ -43,7 +43,7 @@ class Connector
 
     public function resolve($payload = [])
     {
-        $query = $this->datastore->query();
+        $query = $this->client->query();
         $query->kind($this->config['kind']);
 
         $fields = [];
@@ -73,7 +73,7 @@ class Connector
                 case 'String':
                 case 'ID':
                 case 'unknown':
-                    $query->filter($key,"=",""\"$value\"");
+                    $query->filter($key,"=",""\$value\"");
                     break;
             }
         }
@@ -94,8 +94,7 @@ class Connector
             }
         }
 
-        $results = $this->datastore->runQuery($query);
-        $results = $this->client->query($sql)->fetchAll();
+        $results = $this->client->runQuery($query);
 
         if ($this->multivalued) {
             $payload['response'] = (!empty($results)) ? $results : null;

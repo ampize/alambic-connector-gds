@@ -18,7 +18,6 @@ class Connector
     protected $orderBy = null;
     protected $orderByDirection = 'DESC';
     protected $argsDefinition;
-    protected $requiredConfig = [];
     protected $requiredArgs = [];
     protected $connection;
     protected $requiredConfig = [

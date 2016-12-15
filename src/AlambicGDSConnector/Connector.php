@@ -73,7 +73,7 @@ class Connector
                 case 'String':
                 case 'ID':
                 case 'unknown':
-                    $query->filter($key,"=",""\$value\"");
+                    $query->filter($key,"=","\"$value\"");
                     break;
             }
         }

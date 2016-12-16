@@ -109,7 +109,7 @@ class Connector
             }
         } else {
             if (!empty($results)) {
-                $entity = $results;
+                $entity = $results->current();
                 $result = $entity->get();
                 $result['id'] = $entity->key()->pathEndIdentifier();
                 $payload['response'] = $result;

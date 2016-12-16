@@ -67,14 +67,12 @@ class Connector
                 case 'Int':
                 case 'Float':
                 case 'Boolean':
+                case 'String':
+                case 'unknown':
                     $query->filter($key,"=",$value);
                     break;
                 case 'ID':
                     $query->filter('__key__', '=', $this->client->key($this->config['kind'], $value));
-                    break;
-                case 'String':
-                case 'unknown':
-                    $query->filter($key,"=","\"$value\"");
                     break;
             }
         }

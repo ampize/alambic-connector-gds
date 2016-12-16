@@ -13,7 +13,7 @@ class Connector
     protected $config;
     protected $args;
     protected $multivalued;
-    protected $start = 0;
+    protected $start = "";
     protected $limit = 10;
     protected $orderBy = null;
     protected $orderByDirection = 'DESC';
@@ -58,7 +58,7 @@ class Connector
         }
 
         if (!empty($fields)) {
-            $query->projection($fields);
+            //$query->projection($fields);
         }
 
         foreach ($this->args as $key => $value) {
@@ -69,8 +69,10 @@ class Connector
                 case 'Boolean':
                     $query->filter($key,"=",$value);
                     break;
-                case 'String':
                 case 'ID':
+                    $query->filter('__key__', '=', $this->client->key($this->config['kind'], $value));
+                    break;
+                case 'String':
                 case 'unknown':
                     $query->filter($key,"=","\"$value\"");
                     break;
@@ -96,9 +98,24 @@ class Connector
         $results = $this->client->runQuery($query);
 
         if ($this->multivalued) {
-            $payload['response'] = (!empty($results)) ? $results : null;
+            if (!empty($results)) {
+                foreach($results as $entity) {
+                    $result = $entity->get();
+                    $result['id'] = $entity->key()->pathEndIdentifier();
+                    $payload['response'][] = $result;
+                }
+            } else {
+                $payload['response'] = null;
+            }
         } else {
-            $payload['response'] = (!empty($results)) ? $results[0] : null;
+            if (!empty($results)) {
+                $entity = $results;
+                $result = $entity->get();
+                $result['id'] = $entity->key()->pathEndIdentifier();
+                $payload['response'] = $result;
+            } else {
+                $payload['response'] = null;
+            }
         }
 
         return $payload;

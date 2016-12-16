@@ -4,6 +4,10 @@ namespace AlambicGDSConnector;
 
 use \Google\Cloud\ServiceBuilder;
 use \Google\Cloud\Datastore\Query\Query;
+
+use Alambic\Exception\ConnectorArgs;
+use Alambic\Exception\ConnectorConfig;
+use Alambic\Exception\ConnectorUsage;
 use \Exception;
 
 class Connector
@@ -20,6 +24,7 @@ class Connector
     protected $argsDefinition;
     protected $requiredArgs = [];
     protected $connection;
+    protected $methodName;
     protected $requiredConfig = [
         'kind' => 'Kind name is required'
     ];
@@ -37,18 +42,18 @@ class Connector
 
         $this->client = Connection::getInstance($connectionParams)->getConnection();
 
-        return $payload['isMutation'] ? $this->execute($payload) : $this->resolve($payload);
+        return $payload['isMutation'] ? $this->execute($payload) : $this->resolve();
     }
 
-    public function resolve($payload = [])
+    public function resolve()
     {
         $query = $this->client->query();
         $query->kind($this->config['kind']);
 
         $fields = [];
-        if (!empty($payload['pipelineParams']['argsDefinition'])) {
+        if (!empty($this->argsDefinition)) {
             // only query scalar types
-            foreach ($payload['pipelineParams']['argsDefinition'] as $key => $value) {
+            foreach ($this->argsDefinition as $key => $value) {
                 if (in_array($value['type'], ['Int', 'Float', 'Boolean', 'String', 'ID'])) {
                     $fields[] = $key;
                 } else {
@@ -100,80 +105,83 @@ class Connector
                 foreach($results as $entity) {
                     $result = $entity->get();
                     $result['id'] = $entity->key()->pathEndIdentifier();
-                    $payload['response'][] = $result;
+                    $this->payload['response'][] = $result;
                 }
             } else {
-                $payload['response'] = null;
+                $this->payload['response'] = null;
             }
         } else {
             if (!empty($results)) {
                 $entity = $results->current();
                 $result = $entity->get();
                 $result['id'] = $entity->key()->pathEndIdentifier();
-                $payload['response'] = $result;
+                $this->payload['response'] = $result;
             } else {
-                $payload['response'] = null;
+                $this->payload['response'] = null;
             }
         }
 
-        return $payload;
+        return $this->payload;
     }
-    public function execute($payload = [])
+    public function execute()
     {
-        $args = isset($payload['args']) ? $payload['args'] : [];
-        $basePath = $payload['configs']['path'];
-        $methodName = isset($payload['methodName']) ? $payload['methodName'] : null;
-        if (empty($methodName)) {
-            throw new Exception('Firebase connector requires a valid methodName for write ops');
+
+        if(empty($this->methodName)){
+            throw new ConnectorConfig('MongoDB connector requires a valid methodName for write ops');
         }
-        $argsList = $args;
+        if(empty($this->args['id'])&&$this->methodName!='create'){
+            throw new ConnectorArgs('MongoDB connector requires id for operations other than create');
+        }
+        $argsList = $this->args;
         unset($argsList['id']);
-        switch ($methodName) {
+        switch ($this->methodName) {
             case 'update':
                 try {
-                    $path = $basePath.'/'.$args['id'];
-                    $data = $this->_client->update($path, $argsList);
-                    $result = json_decode($data, true);
-                } catch (Exception $exception) {
-                    throw new Exception($exception->getMessage());
+                    $entityKey = $this->client->key($this->config['kind'], $this->args['id']);
+                    $transaction = $this->client->transaction();
+                    $entity = $transaction->lookup($entityKey);
+                    if (!is_null($entity)) {
+                        foreach($argsList as $key => $value) {
+                            $entity[$key] = $value;
+                        }
+                        $transaction->upsert($entity);
+                        $transaction->commit();
+                        $result = $entity;
+                    } else {
+                        throw new ConnectorUsage("Record not found: ".$this->args['id']);
+                    }
+                } catch (Exception $e) {
+                    throw new ConnectorUsage($e->getMessage());
                 }
                 break;
             case 'delete':
                 try {
-                    $path = $basePath.'/'.$args['id'];
-                    $data = $this->_client->delete($path);
-                    $result = json_decode($data, true);
-                } catch (Exception $exception) {
-                    throw new Exception($exception->getMessage());
+                    $entityKey = $this->client->key($this->config['kind'], $this->args['id']);
+                    $this->client->delete($entityKey);
+                } catch (Exception $e) {
+                    $error = json_decode($e->getMessage());
+                    throw new ConnectorUsage($error->error->message);
                 }
                 break;
             case 'create':
                 try {
-                    if (isset($args['id'])) {
-                        $path = $basePath.'/'.$args['id'];
-                        $data = $this->_client->set($path, $argsList);
-                        $result = json_decode($data, true);
-                    } else {
-                        $path = $basePath;
-                        $data = $this->_client->push($path, $argsList);
-                        $id = json_decode($data)->name;
-                        $args['id'] = $id;
-                        $result = $argsList;
-                    }
-                } catch (Exception $exception) {
-                    throw new Exception($exception->getMessage());
+                    $entityKey = isset($this->args['id']) ? $this->client->key($this->config['kind'], $this->args['id']) : $this->client->key($this->config['kind']);
+                    $entity = $this->client->entity(
+                        $entityKey,
+                        $argsList
+                    );
+                    $this->client->insert($entity);
+                    $result = $entity;
+                } catch (Exception $e) {
+                    $error = json_decode($e->getMessage());
+                    throw new ConnectorUsage($error->error->message);
                 }
                 break;
-            default:
-                throw new Exception("Error: unknown $methodName mutation");
         }
-        if (!isset($result['error'])) {
-            $result['id'] = $args['id'];
-            $payload['response'] = $result;
-            return $payload;
-        } else {
-            throw new Exception('Firebase error: '.$result['error']);
-        }
+        $result['id'] = $this->args['id'];
+        $payload['response'] = $result;
+        return $payload;
+
     }
 
     protected function setPayload($payload) {
@@ -183,7 +191,7 @@ class Connector
          $this->config = array_merge($baseConfig, $configs);
          $this->args=isset($this->payload["args"]) ? $payload["args"] : [];
          $this->multivalued=isset($payload["multivalued"]) ? $payload["multivalued"] : false;
-         if (!empty($payload['pipelineParams']['start'])) $this->start = $payload['pipelineParams']['start'];
+         $this->methodName = isset($this->payload['methodName']) ? $this->payload['methodName'] : null;         if (!empty($payload['pipelineParams']['start'])) $this->start = $payload['pipelineParams']['start'];
          if (!empty($payload['pipelineParams']['limit'])) $this->limit = $payload['pipelineParams']['limit'];
          if (!empty($payload['pipelineParams']['orderBy'])) $this->orderBy = $payload['pipelineParams']['orderBy'];
          if (!empty($payload['pipelineParams']['orderByDirection'])) $this->orderByDirection = $payload['pipelineParams']['orderByDirection'];

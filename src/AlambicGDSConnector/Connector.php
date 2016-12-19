@@ -50,22 +50,6 @@ class Connector
         $query = $this->client->query();
         $query->kind($this->config['kind']);
 
-        $fields = [];
-        if (!empty($this->argsDefinition)) {
-            // only query scalar types
-            foreach ($this->argsDefinition as $key => $value) {
-                if (in_array($value['type'], ['Int', 'Float', 'Boolean', 'String', 'ID'])) {
-                    $fields[] = $key;
-                } else {
-                    $fields[] = reset($value['relation']);
-                }
-            }
-        }
-
-        if (!empty($fields)) {
-            //$query->projection($fields);
-        }
-
         foreach ($this->args as $key => $value) {
             $type = isset($this->argsDefinition[$key]['type']) ? $this->argsDefinition[$key]['type'] : 'unknown';
             switch ($type) {

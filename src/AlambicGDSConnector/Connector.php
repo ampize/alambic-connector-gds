@@ -86,6 +86,7 @@ class Connector
 
         if ($this->multivalued) {
             if (!empty($results)) {
+                $this->payload['response']=[];
                 foreach($results as $entity) {
                     $result = $entity->get();
                     $result['id'] = $entity->key()->pathEndIdentifier();

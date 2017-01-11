@@ -15,6 +15,7 @@ class Connector
     protected $client;
     protected $payload;
     protected $config;
+    protected $idField="id";
     protected $args;
     protected $multivalued;
     protected $start = "";
@@ -89,7 +90,7 @@ class Connector
                 $this->payload['response']=[];
                 foreach($results as $entity) {
                     $result = $entity->get();
-                    $result['id'] = $entity->key()->pathEndIdentifier();
+                    $result[$this->idField] = $entity->key()->pathEndIdentifier();
                     $this->payload['response'][] = $result;
                 }
             } else {
@@ -99,7 +100,7 @@ class Connector
             if (!empty($results)) {
                 $entity = $results->current();
                 $result = $entity->get();
-                $result['id'] = $entity->key()->pathEndIdentifier();
+                $result[$this->idField] = $entity->key()->pathEndIdentifier();
                 $this->payload['response'] = $result;
             } else {
                 $this->payload['response'] = null;
@@ -114,7 +115,7 @@ class Connector
         if(empty($this->methodName)){
             throw new ConnectorConfig('MongoDB connector requires a valid methodName for write ops');
         }
-        if(empty($this->args['id'])&&$this->methodName!='create'){
+        if(empty($this->args[$this->idField])&&$this->methodName!='create'){
             throw new ConnectorArgs('MongoDB connector requires id for operations other than create');
         }
         $argsList = $this->args;
@@ -122,7 +123,7 @@ class Connector
         switch ($this->methodName) {
             case 'update':
                 try {
-                    $entityKey = $this->client->key($this->config['kind'], $this->args['id']);
+                    $entityKey = $this->client->key($this->config['kind'], $this->args[$this->idField]);
                     $transaction = $this->client->transaction();
                     $entity = $transaction->lookup($entityKey);
                     if (!is_null($entity)) {
@@ -133,7 +134,7 @@ class Connector
                         $transaction->commit();
                         $result = $entity;
                     } else {
-                        throw new ConnectorUsage("Record not found: ".$this->args['id']);
+                        throw new ConnectorUsage("Record not found: ".$this->args[$this->idField]);
                     }
                 } catch (Exception $e) {
                     throw new ConnectorUsage($e->getMessage());
@@ -141,7 +142,7 @@ class Connector
                 break;
             case 'delete':
                 try {
-                    $entityKey = $this->client->key($this->config['kind'], $this->args['id']);
+                    $entityKey = $this->client->key($this->config['kind'], $this->args[$this->idField]);
                     $this->client->delete($entityKey);
                 } catch (Exception $e) {
                     $error = json_decode($e->getMessage());
@@ -150,7 +151,7 @@ class Connector
                 break;
             case 'create':
                 try {
-                    $entityKey = isset($this->args['id']) ? $this->client->key($this->config['kind'], $this->args['id']) : $this->client->key($this->config['kind']);
+                    $entityKey = isset($this->args[$this->idField]) ? $this->client->key($this->config['kind'], $this->args[$this->idField]) : $this->client->key($this->config['kind']);
                     $entity = $this->client->entity(
                         $entityKey,
                         $argsList
@@ -163,7 +164,7 @@ class Connector
                 }
                 break;
         }
-        $result['id'] = $this->args['id'];
+        $result[$this->idField] = $this->args[$this->idField];
         $payload['response'] = $result;
         return $payload;
 
@@ -174,6 +175,9 @@ class Connector
          $configs = isset($payload["configs"]) ? $payload["configs"] : [];
          $baseConfig=isset($payload["connectorBaseConfig"]) ? $payload["connectorBaseConfig"] : [];
          $this->config = array_merge($baseConfig, $configs);
+         if(!empty($this->config["idField"])){
+             $this->idField=$this->config["idField"];
+         }
          $this->args=isset($this->payload["args"]) ? $payload["args"] : [];
          $this->multivalued=isset($payload["multivalued"]) ? $payload["multivalued"] : false;
          $this->methodName = isset($this->payload['methodName']) ? $this->payload['methodName'] : null;         if (!empty($payload['pipelineParams']['start'])) $this->start = $payload['pipelineParams']['start'];

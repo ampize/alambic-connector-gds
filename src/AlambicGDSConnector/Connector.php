@@ -38,8 +38,13 @@ class Connector
 
         $this->setPayload($payload);
         $this->checkConfig();
-
-        $connectionParams = isset($this->config['projectId']) ? ['projectId' => $this->config['projectId']] : [];
+        $connectionParams=[];
+        if(isset($this->config['projectId'])){
+            $connectionParams["projectId"]=$this->config['projectId'];
+        }
+        if(isset($this->config['namespaceId'])){
+            $connectionParams["namespaceId"]=$this->config['namespaceId'];
+        }
 
         $this->client = Connection::getInstance($connectionParams)->getConnection();
 

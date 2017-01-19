@@ -169,7 +169,7 @@ class Connector
                 }
                 break;
         }
-        $result[$this->idField] = $this->methodName=="create" ? $result->key()->path()[0]["id"] : $this->args[$this->idField];
+        $result[$this->idField] = isset($this->args[$this->idField]) ? $this->args[$this->idField] : $result->key()->path()[0]["id"];
         $payload['response'] = $result;
         return $payload;
 

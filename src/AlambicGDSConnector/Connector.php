@@ -159,7 +159,8 @@ class Connector
                     $entityKey = isset($this->args[$this->idField]) ? $this->client->key($this->config['kind'], $this->args[$this->idField]) : $this->client->key($this->config['kind']);
                     $entity = $this->client->entity(
                         $entityKey,
-                        $argsList
+                        $argsList,
+                        ['excludeFromIndexes'=>isset($this->config["excludeFromIndexes"]) ? $this->config["excludeFromIndexes"] : []]
                     );
                     $this->client->insert($entity);
                     $result = $entity;

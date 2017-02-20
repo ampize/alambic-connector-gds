@@ -104,9 +104,13 @@ class Connector
         } else {
             if (!empty($results)) {
                 $entity = $results->current();
-                $result = $entity->get();
-                $result[$this->idField] = $entity->key()->pathEndIdentifier();
-                $this->payload['response'] = $result;
+                if(!empty($entity)){
+                    $result = $entity->get();
+                    $result[$this->idField] = $entity->key()->pathEndIdentifier();
+                    $this->payload['response'] = $result;
+                } else {
+                    $this->payload['response'] = null;
+                }
             } else {
                 $this->payload['response'] = null;
             }

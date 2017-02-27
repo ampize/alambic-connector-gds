@@ -22,7 +22,7 @@ class Connector
     protected $limit = 10;
     protected $orderBy = null;
     protected $orderByDirection = 'DESC';
-    protected $argsDefinition;
+    protected $argsDefinition = [];
     protected $requiredArgs = [];
     protected $connection;
     protected $methodName;
@@ -175,8 +175,8 @@ class Connector
                 break;
         }
         $result[$this->idField] = isset($this->args[$this->idField]) ? $this->args[$this->idField] : $result->key()->path()[0]["id"];
-        $payload['response'] = $result;
-        return $payload;
+        $this->payload['response'] = $result;
+        return $this->payload;
 
     }
 
@@ -191,10 +191,11 @@ class Connector
          $this->args=isset($this->payload["args"]) ? $payload["args"] : [];
          $this->multivalued=isset($payload["multivalued"]) ? $payload["multivalued"] : false;
          $this->methodName = isset($this->payload['methodName']) ? $this->payload['methodName'] : null;         if (!empty($payload['pipelineParams']['start'])) $this->start = $payload['pipelineParams']['start'];
-         if (!empty($payload['pipelineParams']['limit'])) $this->limit = $payload['pipelineParams']['limit'];
-         if (!empty($payload['pipelineParams']['orderBy'])) $this->orderBy = $payload['pipelineParams']['orderBy'];
-         if (!empty($payload['pipelineParams']['orderByDirection'])) $this->orderByDirection = $payload['pipelineParams']['orderByDirection'];
-         if (!empty($payload['pipelineParams']['argsDefinition'])) $this->argsDefinition = $payload['pipelineParams']['argsDefinition'];
+        $this->start =!empty($payload['pipelineParams']['start']) ? $payload['pipelineParams']['start'] : 0;
+        $this->limit =!empty($payload['pipelineParams']['limit']) ? $payload['pipelineParams']['limit'] : 10;
+        $this->orderBy =!empty($payload['pipelineParams']['orderBy']) ? $payload['pipelineParams']['orderBy'] : null;
+        $this->orderByDirection =!empty($payload['pipelineParams']['orderByDirection']) ? $payload['pipelineParams']['orderByDirection'] : 'DESC';
+        $this->argsDefinition =!empty($payload['pipelineParams']['$argsDefinition']) ? $payload['pipelineParams']['$argsDefinition'] : [];
      }
 
     protected function checkConfig() {

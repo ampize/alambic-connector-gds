@@ -81,6 +81,7 @@ class Connector
                         $orderBy = Query::ORDER_ASCENDING;
                         break;
                     case "DESC":
+                    default:
                         $orderBy = Query::ORDER_DESCENDING;
                         break;
                 }

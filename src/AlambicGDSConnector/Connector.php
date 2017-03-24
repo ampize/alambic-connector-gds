@@ -196,7 +196,7 @@ class Connector
         $this->limit =!empty($payload['pipelineParams']['limit']) ? $payload['pipelineParams']['limit'] : 10;
         $this->orderBy =!empty($payload['pipelineParams']['orderBy']) ? $payload['pipelineParams']['orderBy'] : null;
         $this->orderByDirection =!empty($payload['pipelineParams']['orderByDirection']) ? $payload['pipelineParams']['orderByDirection'] : 'DESC';
-        $this->argsDefinition =!empty($payload['pipelineParams']['$argsDefinition']) ? $payload['pipelineParams']['$argsDefinition'] : [];
+        $this->argsDefinition =!empty($payload['pipelineParams']['argsDefinition']) ? $payload['pipelineParams']['argsDefinition'] : [];
      }
 
     protected function checkConfig() {

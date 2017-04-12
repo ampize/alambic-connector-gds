@@ -73,7 +73,7 @@ class Connector
         }
 
         if ($this->multivalued) {
-            $query->start($this->start);
+            $query->offset($this->start);
             $query->limit($this->limit);
             if (!empty($this->orderBy)) {
                 switch ($this->orderByDirection) {

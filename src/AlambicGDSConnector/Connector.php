@@ -97,6 +97,19 @@ class Connector
                         }
                     }
                 }
+                if(!empty($this->filters["betweenFilters"])){
+                    foreach($this->filters["betweenFilters"] as $betweenFilter){
+                            if($betweenFilter["operator"]=='between'){
+                                if(!$this->ineqFilteredProperty){
+                                    $this->ineqFilteredProperty=$betweenFilter["field"];
+                                } elseif($this->ineqFilteredProperty!=$betweenFilter["field"]){
+                                    continue;
+                                }
+                                $query->filter($betweenFilter["field"],">=",$betweenFilter["min"]);
+                                $query->filter($betweenFilter["field"],"<=",$betweenFilter["max"]);
+                            }
+                    }
+                }
             }
             $query->offset($this->start);
             $query->limit($this->limit);

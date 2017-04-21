@@ -20,7 +20,15 @@ class Connector
     protected $multivalued;
     protected $start = "";
     protected $limit = 10;
+    protected $filters = null;
     protected $orderBy = null;
+    protected $implementedOperators=[
+        "eq"=>"=",
+        "lt"=>"<",
+        "lte"=>"<=",
+        "gt"=>">",
+        "gte"=>">=",
+    ];
     protected $orderByDirection = 'DESC';
     protected $argsDefinition = [];
     protected $requiredArgs = [];
@@ -73,6 +81,18 @@ class Connector
         }
 
         if ($this->multivalued) {
+            if($this->filters){
+                if(!empty($this->filters["scalarFilters"])){
+                    foreach($this->filters["scalarFilters"] as $scalarFilter){
+                        if(isset($this->implementedOperators[$scalarFilter["operator"]])){
+                            if(!isset($scalarFilter["value"])){
+                                $scalarFilter["value"]=null;
+                            }
+                            $query->filter($scalarFilter["field"],$this->implementedOperators[$scalarFilter["operator"]],$scalarFilter["value"]);
+                        }
+                    }
+                }
+            }
             $query->offset($this->start);
             $query->limit($this->limit);
             if (!empty($this->orderBy)) {
@@ -194,6 +214,7 @@ class Connector
          $this->methodName = isset($this->payload['methodName']) ? $this->payload['methodName'] : null;         if (!empty($payload['pipelineParams']['start'])) $this->start = $payload['pipelineParams']['start'];
         $this->start =!empty($payload['pipelineParams']['start']) ? $payload['pipelineParams']['start'] : 0;
         $this->limit =!empty($payload['pipelineParams']['limit']) ? $payload['pipelineParams']['limit'] : 10;
+        $this->filters =!empty($payload['pipelineParams']['filters']) ? $payload['pipelineParams']['filters'] : null;
         $this->orderBy =!empty($payload['pipelineParams']['orderBy']) ? $payload['pipelineParams']['orderBy'] : null;
         $this->orderByDirection =!empty($payload['pipelineParams']['orderByDirection']) ? $payload['pipelineParams']['orderByDirection'] : 'DESC';
         $this->argsDefinition =!empty($payload['pipelineParams']['argsDefinition']) ? $payload['pipelineParams']['argsDefinition'] : [];

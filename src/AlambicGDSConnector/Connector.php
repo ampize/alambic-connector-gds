@@ -29,6 +29,7 @@ class Connector
         "gt"=>">",
         "gte"=>">=",
     ];
+    protected $ineqFilteredProperty = null;
     protected $orderByDirection = 'DESC';
     protected $argsDefinition = [];
     protected $requiredArgs = [];
@@ -85,8 +86,12 @@ class Connector
                 if(!empty($this->filters["scalarFilters"])){
                     foreach($this->filters["scalarFilters"] as $scalarFilter){
                         if(isset($this->implementedOperators[$scalarFilter["operator"]])){
-                            if(!isset($scalarFilter["value"])){
-                                $scalarFilter["value"]=null;
+                            if($scalarFilter["operator"]!='eq'){
+                                if(!$this->ineqFilteredProperty){
+                                    $this->ineqFilteredProperty=$scalarFilter["field"];
+                                } elseif($this->ineqFilteredProperty!=$scalarFilter["field"]){
+                                    continue;
+                                }
                             }
                             $query->filter($scalarFilter["field"],$this->implementedOperators[$scalarFilter["operator"]],$scalarFilter["value"]);
                         }
@@ -95,6 +100,10 @@ class Connector
             }
             $query->offset($this->start);
             $query->limit($this->limit);
+            if($this->ineqFilteredProperty){
+                $query->order($this->ineqFilteredProperty);
+            }
+
             if (!empty($this->orderBy)) {
                 switch ($this->orderByDirection) {
                     case "ASC":

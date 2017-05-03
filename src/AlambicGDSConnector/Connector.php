@@ -216,6 +216,9 @@ class Connector
                     throw new ConnectorUsage($error->error->message);
                 }
                 break;
+            case 'bypass':
+                $result=$this->args;
+                break;
         }
         $result[$this->idField] = isset($this->args[$this->idField]) ? $this->args[$this->idField] : $result->key()->path()[0]["id"];
         $this->payload['response'] = $result;

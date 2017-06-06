@@ -173,6 +173,21 @@ class Connector
         $argsList = $this->args;
         unset($argsList['id']);
         switch ($this->methodName) {
+            case 'upsert':
+                try {
+                    $entityKey = isset($this->args[$this->idField]) ? $this->client->key($this->config['kind'], $this->args[$this->idField]) : $this->client->key($this->config['kind']);
+                    $entity = $this->client->entity(
+                        $entityKey,
+                        $argsList,
+                        ['excludeFromIndexes'=>isset($this->config["excludeFromIndexes"]) ? $this->config["excludeFromIndexes"] : []]
+                    );
+                    $this->client->upsert($entity);
+                    $result = $entity;
+                } catch (Exception $e) {
+                    $error = json_decode($e->getMessage());
+                    throw new ConnectorUsage($error->error->message);
+                }
+                break;
             case 'update':
                 try {
                     $entityKey = $this->client->key($this->config['kind'], $this->args[$this->idField]);

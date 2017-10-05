@@ -246,9 +246,7 @@ class Connector
          $configs = isset($payload["configs"]) ? $payload["configs"] : [];
          $baseConfig=isset($payload["connectorBaseConfig"]) ? $payload["connectorBaseConfig"] : [];
          $this->config = array_merge($baseConfig, $configs);
-         if(!empty($this->config["idField"])){
-             $this->idField=$this->config["idField"];
-         }
+        $this->idField=!empty($this->config["idField"]) ? $this->idField=$this->config["idField"] : "id";
          $this->args=isset($this->payload["args"]) ? $payload["args"] : [];
          $this->multivalued=isset($payload["multivalued"]) ? $payload["multivalued"] : false;
          $this->methodName = isset($this->payload['methodName']) ? $this->payload['methodName'] : null;         if (!empty($payload['pipelineParams']['start'])) $this->start = $payload['pipelineParams']['start'];
